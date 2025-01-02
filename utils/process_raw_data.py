@@ -2,7 +2,7 @@ import os
 import subprocess
 
 # Path to the folder containing the video files
-video_folder = "/Users/lennoxanderson/Documents/Research/RawDriving" 
+video_folder = "/Users/lennoxanderson/Documents/Research/RawDrivingData" 
 
 # Output folder for combined videos
 output_folder = "/Users/lennoxanderson/Documents/Research/ProcessedDrivingData"  
@@ -46,6 +46,4 @@ def combine_videos(camera_type):
 
 # Process each camera type
 for camera in camera_types:
-    combine_videos(camera)
 
-    testing
