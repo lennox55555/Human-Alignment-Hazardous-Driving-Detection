@@ -7,7 +7,7 @@ const useSignIn = () => {
 
     const signIn = async (signInFormData: SignInFormData) => {
         try {
-            const response = await axios.post('http://localhost:3001/auth/signIn', signInFormData);
+            const response = await axios.post('https://human-alignment-hazardous-driving.onrender.com/auth/signIn', signInFormData);
             console.log('User has successfully signed in!', response);
 
             localStorage.setItem('user', JSON.stringify(response.data));

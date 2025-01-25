@@ -29,7 +29,7 @@ const Questions: React.FC<QuestionsProps> = ({ onFormSumbitted, videoId, spaceba
                 if (userItem) {
                     const user = JSON.parse(userItem);
 
-                    const response = await axios.get('http://localhost:3001/survey/top-raffle-entries', {
+                    const response = await axios.get('https://human-alignment-hazardous-driving.onrender.com/survey/top-raffle-entries', {
                         params: {
                             currentUserEmail: user.email
                         }
