@@ -7,7 +7,7 @@ const useRegister = () => {
 
     const registerUser = async (registrationFormData: RegistrationFormData) => {
         try {
-            const response = await axios.post('http://localhost:3001/auth/register', registrationFormData);
+            const response = await axios.post('https://human-alignment-hazardous-driving.onrender.com/auth/register', registrationFormData);
             console.log('User has successfully registered!', response);
 
             localStorage.setItem('user', JSON.stringify(response.data));

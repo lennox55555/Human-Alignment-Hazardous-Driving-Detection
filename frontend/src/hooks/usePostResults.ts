@@ -3,7 +3,7 @@ import axios from "axios"
 
 const usePostResults = () => {
     const postResults = async (results: SurveyResults) => {
-        axios.post('http://localhost:3001/survey/results', results)
+        axios.post('https://human-alignment-hazardous-driving.onrender.com/survey/results', results)
             .then(() => {
                 console.log('Survey results have been posted to MongoDB.');
             })

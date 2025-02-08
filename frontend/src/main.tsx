@@ -4,8 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import App from './App';
-import { AuthContextProvider } from './components/Auth/AuthContext';
-import { WebGazerProvider } from './components/WebGazer/WebGazerContext';
+import { AuthContextProvider } from './components/auth/AuthContext';
+import { WebGazerProvider } from './components/webgazer/WebGazerContext';
 
 declare global {
   interface Window {

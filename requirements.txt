@@ -1,2 +1,11 @@
 ffmpeg==1.4
 pymongo
+python-dotenv==1.0.1
+boto3==1.36.16
+pandas==2.2.3
+scipy==1.11.4
+opencv-python==4.11.0.86
+numpy==1.23.5
+matplotlib==3.7.1
+scikit-learn==1.2.2
+ipykernel
