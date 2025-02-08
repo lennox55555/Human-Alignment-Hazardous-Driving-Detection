@@ -1,0 +1,16 @@
+
+.env
+
+/data/*.csv
+/data/*.xlsx
+/data/survey_results_*
+/data/users_data_*
+
+/logs/
+
+__pycache__/
+*.pyc
+
+/frontend/dist/
+
+.vscode/

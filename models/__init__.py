@@ -1,0 +1,2 @@
+from .naiveModel import NaiveHazardDetector
+

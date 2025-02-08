@@ -11,6 +11,27 @@ The Human-Aligned Hazardous Driving (HAHD) project is an initiative focused on c
 4. **Training of Deep Learning and ML Models (Coming Soon)**
 
 ---
+## 0. Folder Structure 
+```
+HAHD/
+├── data/
+│   ├── driving_videos/         # Videos from s3 bucket after running ETL/pullVideosAws.py
+│   ├── user_gaze_videos/       # Videos with user gaze after running ETL/userGazeVideoCreator.py
+│   ├── normalized_gaze_data.csv
+├── EDA/                        # EDA Folder
+├── ETL/                        # Folder with ETL process
+├── frontend/                   # code for frontend of the data collection (survey) web app
+├── server/                     # code for backend of the data collection (survey) web app
+├── VideoProcessingManagement   # code to process the driving footage before upload to S3 bucket
+├── .env                         
+├── README.md  
+├── package.json 
+├── package-lock.json                  
+├── .gitignore    
+├── requirements.txt    
+├── sumulationGazePipeline.py   # TBD                 
+```
+---
 
 ## 1. Driving Data Collection for the Web Application
 The project has accumulated over **20 hours of driving footage** from Durham, North Carolina. Data was collected under **various conditions**, including different times of the day and different weather conditions to ensure diversity in the dataset.

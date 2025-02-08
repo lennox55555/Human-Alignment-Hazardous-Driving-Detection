@@ -1,5 +1,5 @@
 import { useState } from "react";
-import VideoPlayer from "../../components/Video/VideoPlayer";
+import VideoPlayer from "../../components/video/VideoPlayer";
 import Questions from "../Questions/Questions";
 import { Modal, Button } from "react-bootstrap";
 import styles from './Survey.module.css';
