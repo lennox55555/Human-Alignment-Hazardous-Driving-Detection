@@ -77,4 +77,11 @@ export interface LeaderboardProps {
     currentUser: { email: string, numRaffleEntries: number };
     currentUserRank: number;
     formSubmitted: boolean;
-  }
+}
+
+export interface ModelProps {
+    title: string;
+    description: string;
+    results: any;
+    limitations: string[];
+}
