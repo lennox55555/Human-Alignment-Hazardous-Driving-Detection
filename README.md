@@ -15,9 +15,17 @@ The Human-Aligned Hazardous Driving (HAHD) project is an initiative focused on c
 ```
 HAHD/
 ├── data/
-│   ├── driving_videos/         # Videos from s3 bucket after running ETL/pullVideosAws.py
-│   ├── user_gaze_videos/       # Videos with user gaze after running ETL/userGazeVideoCreator.py
-│   ├── normalized_gaze_data.csv
+│   ├── processed/              # Processed data after running the transform and processing (ETL)
+│   |       ├── driving_videos/ 
+│   |       ├── badgazedata.csv 
+│   |       ├── normalized_gaze_data.csv 
+│   |       ├── final_user_survey_data.csv
+│   |       ├── binned_video_dat_wo_user.csv
+│   |       ├── aggregate_gaze_data_by_video.csv
+│   ├── raw/
+│   |       ├── driving_videos/ # Videos from s3 bucket after running extraction (ETL)
+│   |       ├── survey_results_raw.csv # Data from MongoDB running extraction (ETL)
+│   |       ├── users_data.csv # Data from MongoDB running extraction (ETL)
 ├── EDA/                        # EDA Folder
 ├── ETL/                        # Folder with ETL process
 ├── frontend/                   # code for frontend of the data collection (survey) web app

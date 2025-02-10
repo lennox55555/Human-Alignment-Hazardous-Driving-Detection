@@ -13,13 +13,14 @@ from pathlib import Path
 from scipy.interpolate import interp1d
 
 class UserGazeVideoCreator:
-    def __init__(self, video_folder_path, csv_path, output_folder_path, aggregate_csv, output_folder_aggregated):
+    def __init__(self, data_dir):
         """
         Initialize the video creator with paths
         """
-        csv_path = "../data/processed/binned_video_dat_wo_user.csv"
-        video_folder_path = "../data/raw/driving_videos"
-        output_folder_path = "../data/processed/driving_videos"
+
+        csv_path = os.path.join(data_dir, "processed/binned_video_dat_wo_user.csv")
+        video_folder_path = os.path.join(data_dir, "raw/driving_videos")
+        output_folder_path = os.path.join(data_dir, "processed/driving_videos")
 
         self.video_folder = Path(video_folder_path)
         self.output_folder = Path(output_folder_path)

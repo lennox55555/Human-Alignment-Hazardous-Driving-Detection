@@ -17,15 +17,15 @@ import ast
 import os
 
 class GazeDataTransformer:
-    def __init__(self, survey_csv_filename="survey_results_raw.csv", users_csv_path="users_data_raw.csv"):
+    def __init__(self, data_dir, survey_csv_filename="survey_results_raw.csv", users_csv_path="users_data_raw.csv"):
         """
         Initialize the gaze data processor
         
         Args:
             input_csv (str): Path to input CSV file
         """
-        self.input_dir = '../data/raw'
-        self.output_dir = '../data/processed'
+        self.input_dir = os.path.join(data_dir, 'raw')
+        self.output_dir = os.path.join(data_dir, 'processed')
         self.survey_df = pd.read_csv(os.path.join(self.input_dir, survey_csv_filename))
         self.users_df = pd.read_csv(os.path.join(self.input_dir, users_csv_path))
         self.VIDEO_WIDTH = 1280
@@ -319,6 +319,9 @@ class GazeDataTransformer:
         # Create time column representing the start of the interval
         training_df['time'] = training_df['time_bin'] * time_split
 
+         # Apply trimming and recalculating time per videoId
+        training_df = training_df.groupby('videoId', group_keys=False).apply(self.trim_and_recalculate_time)
+
         # Drop the 'time_bin' column if not needed
         training_df = training_df.drop('time_bin', axis=1)
         return training_df
@@ -369,23 +372,33 @@ class GazeDataTransformer:
         print(f"All coordinates normalized to: {self.VIDEO_WIDTH}x{self.VIDEO_HEIGHT}")
     
     def save_training_csv(self, df):
-            """Save the data to a CSV file"""
-            try:
-                # Create output directory if it doesn't exist
-                if not os.path.exists(self.output_dir):
-                    os.makedirs(self.output_dir)
-                
-                
-                filename = os.path.join(self.output_dir, 'binned_video_dat_wo_user.csv')
-                
-                # Save to CSV
-                df.to_csv(filename, index=False)
-                print(f"\nMERGED DATA successfully saved to {filename}")
-                print(f"Total rows saved: {len(df)}")
-                print(f"Columns saved: {', '.join(df.columns)}\n")
+        """Save the data to a CSV file"""
+        try:
+            # Create output directory if it doesn't exist
+            if not os.path.exists(self.output_dir):
+                os.makedirs(self.output_dir)
+            
+            
+            filename = os.path.join(self.output_dir, 'binned_video_dat_wo_user.csv')
+            
+            # Save to CSV
+            df.to_csv(filename, index=False)
+            print(f"\nMERGED DATA successfully saved to {filename}")
+            print(f"Total rows saved: {len(df)}")
+            print(f"Columns saved: {', '.join(df.columns)}\n")
 
-            except Exception as e:
-                print(f"Error saving MERGED data: {e}")
+        except Exception as e:
+            print(f"Error saving MERGED data: {e}")
+    
+    # Trim time for each videoId to ensure time difference <= 15
+    def trim_and_recalculate_time(self, group):
+        while group['time'].max() - group['time'].min() > 15:
+            # Drop the row with the earliest time and recalculate
+            group = group[group['time'] > group['time'].min()].reset_index(drop=True)
+
+        # Normalize time based on the new min time
+        group['time'] = group['time'] - group['time'].min()
+        return group
 
     def transform_data(self, time_split=0.28):
         '''
@@ -399,6 +412,9 @@ class GazeDataTransformer:
         Returns:
             (pd.Dataframe): the cleaned dataframe prepped for training
         '''
+        good_output_csv = "normalized_gaze_data.csv"
+        bad_output_csv = "badgazedata.csv"
+
         # Tal's code
         final_survey_df = self.prep_survey_df(self.survey_df)
         final_users_df = self.prep_user_df(self.users_df)
@@ -406,27 +422,31 @@ class GazeDataTransformer:
         
 
         # Lenny's code
-        self.normalize_gaze_data(merged_df=merged_df)
+        if not os.path.exists(os.path.join(self.output_dir, good_output_csv)):
+            self.normalize_gaze_data(merged_df=merged_df)
+        else:
+            print('\n NORMALIZED EYE GAZE Data found!!')
+            print('\n Skipping this step...')
 
         # save the merged csv for reference
         self.save_merged_csv(df=merged_df)
 
-        good_output_csv = "normalized_gaze_data.csv"
-        bad_output_csv = "badgazedata.csv"
-        self.save_normalized_results(good_output_csv= os.path.join(self.output_dir, good_output_csv),
+        if not os.path.exists(os.path.join(self.output_dir, good_output_csv)):
+            self.save_normalized_results(good_output_csv= os.path.join(self.output_dir, good_output_csv),
                                       bad_output_csv= os.path.join(self.output_dir, bad_output_csv))
-
         
 
         # percent of hazards in videos
         hazard_perc = merged_df[merged_df['hazard'] == True].shape[0] / merged_df.shape[0]
         print(f'Percentage of hazards in data: {hazard_perc}')
         
-        # create the binned csv to use for training
-        training_df = self.prep_merged_df_for_training(time_split)
-
-
-        self.save_training_csv(training_df)
+        if not os.path.exists(os.path.join(self.output_dir, 'binned_video_dat_wo_user.csv')):
+            # create the binned csv to use for training
+            training_df = self.prep_merged_df_for_training(time_split)
+            self.save_training_csv(training_df)
+        else:
+            print('\n BINNED TRAINING Data found!!')
+            print('\n Skipping this step...')
 
 
 
