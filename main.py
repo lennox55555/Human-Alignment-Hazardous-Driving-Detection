@@ -18,13 +18,12 @@ PROCESSED_VIDEOS_DIR = os.path.join(DATA_DIR, 'processed/driving_videos')
 MODEL_CHECKPOINT_DIR = "./models/checkpoints"
 DEEP_LEARNING_CHECKPOINT = "deepLearningModel.pkl"
 
-
 def main():
     # TODO: Uncomment this line of code to download the data
     # TODO: Currently commented since that takes a while!!!!
     # Initialize extraction process
-    # extractor = GazeDataExtractor()
-    # extractor.extract_data()
+    extractor = GazeDataExtractor(DATA_DIR)
+    extractor.extract_data()
 
 
     # Initialize transformation process

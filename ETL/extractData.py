@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class S3VideoDownloader():
-    def __init__(self):
+    def __init__(self, data_dir):
         self.s3_client = boto3.client('s3',
             aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
             aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
@@ -27,7 +27,7 @@ class S3VideoDownloader():
         self.bucket_name = os.getenv('S3_BUCKET_NAME')
         
         # Use data/driving_videos as video directory
-        self.video_dir = '../data/raw/driving_videos'
+        self.video_dir = os.path.join(data_dir, 'driving_videos')
 
         # Create directory if it doesn't exist
         os.makedirs(self.video_dir, exist_ok=True)
@@ -59,8 +59,9 @@ class S3VideoDownloader():
 
 class GazeDataExtractor():
 
-    def __init__(self):
-        self.data_dir = '../data/raw'
+    def __init__(self, data_dir):
+        self.data_dir_root = data_dir
+        self.data_dir = os.path.join(data_dir,'raw')
         
         os.makedirs(os.path.dirname(self.data_dir), exist_ok=True)
     
@@ -218,8 +219,11 @@ class GazeDataExtractor():
                 print("MongoDB connection closed")
         
         # Download videos from AWS
-        video_downloader = S3VideoDownloader()
-        video_downloader.pull_data()
+        video_downloader = S3VideoDownloader(self.data_dir)
+        if not os.path.exists(video_downloader.video_dir):
+            video_downloader.pull_data()
+        else:
+            print('VIDEOS from AWS have already been downloaded!!')
         
 def main():
     gazeDataExtractor = GazeDataExtractor()
@@ -228,3 +232,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
