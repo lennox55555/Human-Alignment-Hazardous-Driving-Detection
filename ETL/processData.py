@@ -15,9 +15,10 @@ load_dotenv()
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
 class DataProcessor():
-    def __init__(self, data_dir, normalized_data_filename, aggregate_data_filename):
-        self.data_dir = data_dir
+    def __init__(self, normalized_data_filename='normalized_gaze_data.csv', aggregate_data_filename='aggregate_gaze_data_by_video.csv'):
+        self.data_dir = './data/processed'
         self.normalized_data_filename = normalized_data_filename
         self.normalized_gaze_data = os.path.join(self.data_dir, normalized_data_filename)
         self.aggregate_data_by_video= os.path.join(self.data_dir, aggregate_data_filename)
@@ -148,6 +149,7 @@ class DataProcessor():
         df = self.engineer_aggregate_features(df)
 
         self.save_csv(df)
+        print(f"\nPROCESSED DATA successfully saved to {self.aggregate_data_by_video}")
 
         return df
         
