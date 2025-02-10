@@ -13,7 +13,7 @@ from sklearn.metrics import classification_report
 # CONFIGURATIONS
 # ----------------
 DATA_PATH = os.path.join(os.path.dirname(__file__), "../data/")
-VIDEO_PATH = os.path.join(DATA_PATH, "user_gaze_videos/")  # Adjust path
+VIDEO_PATH = os.path.join(DATA_PATH, "user_gaze_videos/")  
 GAZE_DATA_PATH = os.path.join(DATA_PATH, "normalized_gaze_data.csv")
 
 NUM_FRAMES = 10        # Number of frames per video to sample
@@ -41,7 +41,7 @@ if not required_cols.issubset(gaze_data.columns):
 if gaze_data["hazardDetected"].dtype == object:
     gaze_data["hazardDetected"] = gaze_data["hazardDetected"].str.strip().str.lower() == "true"
 
-# Construct full video filename from userId + "_" + videoId (to match filenames)
+
 gaze_data["videoFilename"] = gaze_data["userId"] + "_" + gaze_data["videoId"].astype(str) + ".mp4"
 
 # ----------------
@@ -65,9 +65,8 @@ def extract_frames(video_path, num_frames=10):
         ret, frame = cap.read()
         if not ret:
             continue
-        # Convert from BGR to RGB
+       
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        # Resize frame if desired
         if FRAME_RESIZE is not None:
             frame_rgb = cv2.resize(frame_rgb, FRAME_RESIZE, interpolation=cv2.INTER_AREA)
         frames.append(frame_rgb)
@@ -82,11 +81,9 @@ if __name__ == "__main__":
     X = []
     y = []
 
-    # Get list of available video files
+    
     video_files = [f for f in os.listdir(VIDEO_PATH) if f.endswith('.mp4')]
     video_files.sort()
-
-    # Extract unique filenames in gaze_data
     available_gaze_videos = set(gaze_data["videoFilename"].unique())
 
     for video in tqdm(video_files, desc="Processing videos"):
@@ -97,7 +94,7 @@ if __name__ == "__main__":
             print(f"Skipping {video} (No matching gaze data found)")
             continue
 
-        # Extract userId and videoId from the filename
+        e
         user_id, video_id = video.rsplit("_", 1)
         video_id = video_id.replace(".mp4", "")
 
@@ -114,13 +111,13 @@ if __name__ == "__main__":
             print(f"Warning: No frames extracted for {video}. Skipping.")
             continue
 
-        # Assume each video is ~15 seconds; adjust this if necessary
+        
         frame_duration = 15.0 / NUM_FRAMES
 
         # 3. Assign label for each frame
         for frame_idx, frame_rgb in enumerate(frames):
             frame_timestamp = frame_idx * frame_duration
-            next_frame_timestamp = (frame_idx + 1) * frame_duration  # End of this frame's time band
+            next_frame_timestamp = (frame_idx + 1) * frame_duration  
             
             # Select all rows within this frame's time band
             hazard_rows = video_hazard_data[
@@ -128,10 +125,8 @@ if __name__ == "__main__":
                 (video_hazard_data["time"] < next_frame_timestamp)
             ]
             
-            # ✅ Label as 1 if ANY hazardDetected is True in this interval
+          
             hazard_label = 1 if (hazard_rows["hazardDetected"] == True).any() else 0
-
-            # 4. Flatten RGB data as feature vector
             feature_vec = frame_rgb.flatten().astype(np.float32)
 
             X.append(feature_vec)
@@ -148,7 +143,7 @@ if __name__ == "__main__":
 
     if len(unique_labels) < 2:
         print("🚨 ERROR: Only one class found. Check hazard labels in your CSV.")
-        print(gaze_data["hazardDetected"].value_counts())  # Debug label distribution
+        print(gaze_data["hazardDetected"].value_counts())  #
         raise ValueError("Less than 2 unique classes found. Cannot train a binary classifier.")
 
     # ---------------------------------
@@ -165,7 +160,7 @@ if __name__ == "__main__":
     print(f"Train size: {len(X_train)}, Val size: {len(X_val)}, Test size: {len(X_test)}")
 
     # -------------------------
-    # TRAIN THE SVM (TIMED)
+    # TRAIN THE SVM 
     # -------------------------
     print("Training SVM model on RGB features...")
     clf = SVC(kernel='linear')
@@ -189,7 +184,7 @@ if __name__ == "__main__":
     print("✅ Done. RGB-based gaze model pipeline complete.")
 
 # -------------------------
-# SAVE MODEL (OPTIONAL)
+# SAVE MODEL 
 # -------------------------
 model_checkpoint = "gaze_svm_model.pkl"
 
