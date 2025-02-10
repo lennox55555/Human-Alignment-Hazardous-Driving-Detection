@@ -6,6 +6,7 @@ import RegistrationPage from './pages/Registration/RegistrationPage';
 import LandingPage from './pages/LandingPage/LandingPage';
 import Calibration from './pages/Calibration/Calibration';
 import Survey from './pages/Survey/Survey';
+import Models from './pages/Models/Models';
 import { useWebGazer } from './hooks/useWebGazer';
 
 const App: React.FC = () => {
@@ -16,6 +17,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path='/' element={ user ? <Navigate to='/landingpage' /> : <SignInPage />} />
+      <Route path='/models' element={<Models />} />
       <Route path='/registration' element={<RegistrationPage />} />
       <Route path='/landingpage' 
                 element={ !user ? <Navigate to='/' /> : <LandingPage /> } 

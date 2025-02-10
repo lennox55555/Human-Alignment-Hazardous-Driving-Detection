@@ -1,0 +1,22 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 80vh;
+    align-items: center;
+    width: 80vh;
+    margin: auto 0;
+    border-radius: 10px;
+}
+
+.limitationItem {
+    list-style: none;
+}
+
+.limitations ul {
+    padding: 0;
+}
+
+.limitations p {
+    font-weight: 600;
+}
