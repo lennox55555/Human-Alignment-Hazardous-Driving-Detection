@@ -28,23 +28,6 @@ if not os.path.exists(GAZE_DATA_PATH):
     raise FileNotFoundError(f"Gaze data path not found: {GAZE_DATA_PATH}")
 
 # ----------------
-# LOAD GAZE DATA
-# ----------------
-gaze_data = pd.read_csv(GAZE_DATA_PATH)
-
-# Expect columns: ["userId", "videoId", "time", "hazardDetected"]
-required_cols = {"userId", "videoId", "time", "hazardDetected"}
-if not required_cols.issubset(gaze_data.columns):
-    raise ValueError(f"The gaze data must have columns: {required_cols}")
-
-# Convert hazardDetected column to boolean if it's stored as a string
-if gaze_data["hazardDetected"].dtype == object:
-    gaze_data["hazardDetected"] = gaze_data["hazardDetected"].str.strip().str.lower() == "true"
-
-
-gaze_data["videoFilename"] = gaze_data["userId"] + "_" + gaze_data["videoId"].astype(str) + ".mp4"
-
-# ----------------
 # FRAME SAMPLING
 # ----------------
 def extract_frames(video_path, num_frames=10):
@@ -74,14 +57,34 @@ def extract_frames(video_path, num_frames=10):
     cap.release()
     return frames
 
-# ----------------------------
-# MAIN PIPELINE: RGB FEATURES
-# ----------------------------
-if __name__ == "__main__":
+def run_rgb_pipeline():
+    """
+    Full pipeline for:
+      1) Reading gaze/hazard data
+      2) Sampling frames from each user video (RGB)
+      3) Flattening & labeling frames
+      4) Training/validating/testing an SVM
+      5) Saving the model
+    """
+    # ----------------
+    # LOAD GAZE DATA
+    # ----------------
+    gaze_data = pd.read_csv(GAZE_DATA_PATH)
+
+    # Expect columns: ["userId", "videoId", "time", "hazardDetected"]
+    required_cols = {"userId", "videoId", "time", "hazardDetected"}
+    if not required_cols.issubset(gaze_data.columns):
+        raise ValueError(f"The gaze data must have columns: {required_cols}")
+
+    # Convert hazardDetected column to boolean if it's stored as a string
+    if gaze_data["hazardDetected"].dtype == object:
+        gaze_data["hazardDetected"] = gaze_data["hazardDetected"].str.strip().str.lower() == "true"
+
+    gaze_data["videoFilename"] = gaze_data["userId"] + "_" + gaze_data["videoId"].astype(str) + ".mp4"
+
     X = []
     y = []
 
-    
     video_files = [f for f in os.listdir(VIDEO_PATH) if f.endswith('.mp4')]
     video_files.sort()
     available_gaze_videos = set(gaze_data["videoFilename"].unique())
@@ -94,7 +97,6 @@ if __name__ == "__main__":
             print(f"Skipping {video} (No matching gaze data found)")
             continue
 
-        e
         user_id, video_id = video.rsplit("_", 1)
         video_id = video_id.replace(".mp4", "")
 
@@ -111,10 +113,9 @@ if __name__ == "__main__":
             print(f"Warning: No frames extracted for {video}. Skipping.")
             continue
 
-        
         frame_duration = 15.0 / NUM_FRAMES
 
-        # 3. Assign label for each frame
+        # Assign label for each frame
         for frame_idx, frame_rgb in enumerate(frames):
             frame_timestamp = frame_idx * frame_duration
             next_frame_timestamp = (frame_idx + 1) * frame_duration  
@@ -125,7 +126,6 @@ if __name__ == "__main__":
                 (video_hazard_data["time"] < next_frame_timestamp)
             ]
             
-          
             hazard_label = 1 if (hazard_rows["hazardDetected"] == True).any() else 0
             feature_vec = frame_rgb.flatten().astype(np.float32)
 
@@ -143,13 +143,12 @@ if __name__ == "__main__":
 
     if len(unique_labels) < 2:
         print("🚨 ERROR: Only one class found. Check hazard labels in your CSV.")
-        print(gaze_data["hazardDetected"].value_counts())  #
+        print(gaze_data["hazardDetected"].value_counts())  
         raise ValueError("Less than 2 unique classes found. Cannot train a binary classifier.")
 
     # ---------------------------------
     # TRAIN/VAL/TEST SPLIT
     # ---------------------------------
-    # 70% for training, then 15%/15% for validation/test
     X_train, X_temp, y_train, y_temp = train_test_split(
         X, y, test_size=0.3, random_state=42, stratify=y
     )
@@ -160,7 +159,7 @@ if __name__ == "__main__":
     print(f"Train size: {len(X_train)}, Val size: {len(X_val)}, Test size: {len(X_test)}")
 
     # -------------------------
-    # TRAIN THE SVM 
+    # TRAIN THE SVM
     # -------------------------
     print("Training SVM model on RGB features...")
     clf = SVC(kernel='linear')
@@ -183,12 +182,11 @@ if __name__ == "__main__":
 
     print("✅ Done. RGB-based gaze model pipeline complete.")
 
-# -------------------------
-# SAVE MODEL 
-# -------------------------
-model_checkpoint = "gaze_svm_model.pkl"
+    # -------------------------
+    # SAVE MODEL
+    # -------------------------
+    model_checkpoint = "gaze_svm_model.pkl"
+    with open(model_checkpoint, "wb") as f:
+        pickle.dump(clf, f)
 
-with open(model_checkpoint, "wb") as f:
-    pickle.dump(clf, f)
-
-print(f"✅ Model saved successfully: {model_checkpoint}")
+    print(f"✅ Model saved successfully: {model_checkpoint}")

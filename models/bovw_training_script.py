@@ -122,11 +122,20 @@ def compute_bovw_histogram(descriptors_per_frame, kmeans):
         histograms.append(hist)
     return np.array(histograms)
 
-# ---------------
-# MAIN PIPELINE
-# ---------------
-if __name__ == "__main__":
-    # Load hazard labels once
+def run_bovw_pipeline():
+    """
+    Full pipeline for:
+      1) Reading hazard labels
+      2) Sampling video frames
+      3) Extracting SIFT features
+      4) Building or loading BoVW vocabulary
+      5) Computing or loading histograms
+      6) Training or loading SVM
+      7) Evaluating
+    """
+    # ----------------
+    # Load hazard labels
+    # ----------------
     HAZARD_DATA_PATH = os.path.join(DATA_PATH, "normalized_gaze_data.csv")
     hazard_data = pd.read_csv(HAZARD_DATA_PATH)
 
@@ -134,10 +143,12 @@ if __name__ == "__main__":
     video_files = [f for f in os.listdir(VIDEO_PATH) if f.endswith('.mp4')]
     video_files.sort()
 
- 
     all_descriptors = []
     all_labels = []
 
+    # ----------------
+    # Process videos in batches
+    # ----------------
     for i in range(0, len(video_files), BATCH_SIZE):
         batch_videos = video_files[i : i + BATCH_SIZE]
         for video in tqdm(batch_videos, desc=f"Processing batch {i // BATCH_SIZE + 1}"):
@@ -148,19 +159,18 @@ if __name__ == "__main__":
             if not frames:
                 continue
 
-            #SIFT descriptors for each frame
+            # SIFT descriptors for each frame
             descriptors_per_frame = extract_sift_features(frames, video_id)
 
-            #Get hazard data subset
+            # Get hazard data subset
             video_hazard_labels = hazard_data[hazard_data["videoId"] == video_id].copy()
             video_hazard_labels.sort_values("time", inplace=True)
 
             for frame_idx, desc in enumerate(descriptors_per_frame):
-                # If desc is None, skip so that X and y remain in sync
                 if desc is None or len(desc) == 0:
                     continue
                 
-                # Example: each frame covers 15/NUM_FRAMES seconds
+                # Each frame covers 15/NUM_FRAMES seconds
                 frame_timestamp = frame_idx * (15.0 / NUM_FRAMES)
 
                 label_subset = video_hazard_labels[
@@ -168,7 +178,6 @@ if __name__ == "__main__":
                     & (video_hazard_labels["time"].shift(-1, fill_value=99999) > frame_timestamp)
                 ]["hazardDetected"].values
 
-                # So we unify the check here:
                 hazard_label = 0
                 if len(label_subset) > 0:
                     val = label_subset[0]
@@ -184,11 +193,11 @@ if __name__ == "__main__":
     # If we have no descriptors, can't proceed
     if len(all_descriptors) == 0:
         print("No descriptors found in any video. Cannot train.")
-        exit(0)
+        return
 
-    # ---------------
+    # ----------------
     # Build/Load BoVW Vocabulary
-    # ---------------
+    # ----------------
     kmeans_checkpoint = "bovw_vocab.pkl"
     if os.path.exists(kmeans_checkpoint):
         print("Loading existing BoVW vocabulary from checkpoint...")
@@ -199,13 +208,13 @@ if __name__ == "__main__":
         kmeans = create_bovw_vocab(all_descriptors, VOCAB_SIZE)
         if kmeans is None:
             print("No descriptors to cluster; cannot train.")
-            exit(0)
+            return
         with open(kmeans_checkpoint, "wb") as f:
             pickle.dump(kmeans, f)
 
-    # ---------------
+    # ----------------
     # Compute/Load Histograms
-    # ---------------
+    # ----------------
     hist_checkpoint = "bovw_histograms.pkl"
     labels_checkpoint = "bovw_labels.pkl"
     if os.path.exists(hist_checkpoint) and os.path.exists(labels_checkpoint):
@@ -237,9 +246,9 @@ if __name__ == "__main__":
             f"got {len(unique_labels)} class(es). Check your labeling logic or hazard data!"
         )
 
-    # ---------------
+    # ----------------
     # Train/Test Split
-    # ---------------
+    # ----------------
     X_train, X_temp, y_train, y_temp = train_test_split(
         X, y, test_size=0.3, random_state=42, stratify=y
     )
@@ -247,9 +256,9 @@ if __name__ == "__main__":
         X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
     )
 
-    # ---------------
+    # ----------------
     # Train Classifier
-    # ---------------
+    # ----------------
     clf = SVC(kernel='linear')
     clf_checkpoint = "bovw_svm_model.pkl"
 
@@ -263,9 +272,9 @@ if __name__ == "__main__":
         with open(clf_checkpoint, "wb") as f:
             pickle.dump(clf, f)
 
-    # ---------------
+    # ----------------
     # Evaluate Model
-    # ---------------
+    # ----------------
     pred_checkpoint = "bovw_predictions.pkl"
     if os.path.exists(pred_checkpoint):
         print("Loading existing predictions from checkpoint...")
