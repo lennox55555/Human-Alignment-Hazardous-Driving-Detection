@@ -8,6 +8,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
+from ETL.userGazeVideoCreator import UserGazeVideoCreator
 
 from dotenv import load_dotenv
 
@@ -17,24 +18,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class DataProcessor():
-    def __init__(self, normalized_data_filename='normalized_gaze_data.csv', aggregate_data_filename='aggregate_gaze_data_by_video.csv'):
-        self.data_dir = './data/processed'
+    def __init__(self, data_dir, normalized_data_filename='normalized_gaze_data.csv', aggregate_data_filename='aggregate_gaze_data_by_video.csv'):
+        self.data_dir = data_dir
+        self.processed_data_dir = os.path.join(data_dir, 'processed')
         self.normalized_data_filename = normalized_data_filename
-        self.normalized_gaze_data = os.path.join(self.data_dir, normalized_data_filename)
-        self.aggregate_data_by_video= os.path.join(self.data_dir, aggregate_data_filename)
+        self.normalized_gaze_data = os.path.join(self.processed_data_dir, normalized_data_filename)
+        self.aggregate_data_by_video= os.path.join(self.processed_data_dir, aggregate_data_filename)
 
         # Create directory if it doesn't exist
-        os.makedirs(self.data_dir, exist_ok=True)
+        os.makedirs(self.processed_data_dir, exist_ok=True)
     
     def process_normalized_data(self):
         df = pd.read_csv(self.normalized_gaze_data)
         # renamed the Unnamed : 0 column to index and duration to gazeDuration so it's more appropriate
-        df.rename(columns={'Unnamed: 0': 'index', 'duration': 'gazeDuration'}, inplace=True)
+        df.rename(columns={'duration': 'gazeDuration'}, inplace=True)
         df["noDetection_no_to_subtle_hazard"] = df["noDetectionReason_nohazards"] + df["noDetectionReason_subtlehazards"]
 
          # Drop demographic and unnecessary columns
         columns_to_drop = [
-            "userId", "index",
+            "userId",
 
             # demographics features
             "ethnicity_asian", "ethnicity_black or african american", 
@@ -77,7 +79,6 @@ class DataProcessor():
             'y': lambda y: list(y),
             'time': lambda t: list(t),
             'detectionConfidence': 'mean',
-            'gazeDuration': 'min',
             'age': 'mean',
             'hazardDetected': 'max',
             'licenseAge': 'mean',
@@ -150,6 +151,12 @@ class DataProcessor():
 
         self.save_csv(df)
         print(f"\nPROCESSED DATA successfully saved to {self.aggregate_data_by_video}")
+
+        if not os.path.exists(os.path.join(self.processed_data_dir, 'driving_videos')):
+            print(f"\nProcessing driving videos for training...")
+            creator = UserGazeVideoCreator(data_dir=self.data_dir)
+            creator.add_gaze_per_video()
+
 
         return df
         
