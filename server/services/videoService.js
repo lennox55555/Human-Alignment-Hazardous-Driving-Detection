@@ -31,7 +31,7 @@ async function getVideoById() {
       throw new Error('No videos found in bucket');
     }
 
-    const videoFound = Contents.find(item => item.Key === 'video268.mp4');
+    const videoFound = Contents.find(item => item.Key === 'video238.mp4');
     
     const getObjectCommand = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
