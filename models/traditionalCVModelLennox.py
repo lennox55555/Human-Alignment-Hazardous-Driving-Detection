@@ -281,8 +281,8 @@ def train_classifier(X, y, model_type="svm"):
 # =========================
 if __name__ == "__main__":
     # Update these paths to point to your CSV file and video folder.
-    csv_path = "/Users/lennoxanderson/Documents/Research/Human-Alignment-Hazardous-Driving-Detection/ETL/preprocessedAndNormalized.csv"
-    video_folder = "/Users/lennoxanderson/Documents/machineLearning/data/TeslaRawDrivingFootage/SplitData/1-4BatchSplits"
+    csv_path = "../data/processed/normalized_gaze_data.csv"
+    video_folder = "../data/raw/driving_videos"
     
     # Process the CSV: adjust timestamps, add rolling averages, extract HSV histogram features,
     # and compute the danger score using detectionConfidence and hazardSeverity.
@@ -291,7 +291,7 @@ if __name__ == "__main__":
         video_folder,
         patch_size=600,      # size of the patch around the gaze point 150 is best rn
         hist_bins=8,        # number of bins for each HSV channel histogram
-        rolling_window=7,   # rolling average window for gaze coordinates, try 7 because of the 250 milisecond response time  7 (≈0.23 s)
+        rolling_window=3,   # rolling average window for gaze coordinates, try
         cap_time=15         # cap effective video duration at 15 seconds
     )
     
