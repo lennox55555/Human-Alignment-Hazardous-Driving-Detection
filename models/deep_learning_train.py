@@ -42,17 +42,22 @@ MODEL_CHECKPOINT = "deepLearningModel.pkl"
 
 class DeepLearningModel():
     def __init__(self, data_dir, model_checkpoint_dir, model_checkpoint="deepLearningModel.pth", binned_video_file='processed/binned_video_dat_wo_user.csv', driving_video_dir='processed/driving_videos'):
+        self.data_dir = data_dir
         self.binned_video_csv = os.path.join(data_dir, binned_video_file)
         self.videos_dir = os.path.join(data_dir, driving_video_dir)
+        self.output_dir = os.path.join(self.data_dir, 'output')
         self.df = pd.read_csv(self.binned_video_csv, index_col=0)
         self.frames_dict = {}
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        self.model_checkpoint = os.path.join(model_checkpoint_dir, model_checkpoint)
 
-        self.df, self.frames_dict = self.add_frames_to_df(self.df)
+        if not os.path.exists(self.model_checkpoint):
+            self.df, self.frames_dict = self.add_frames_to_df(self.df)
         self.model = None
         self.test_loader = None
 
-        self.model_checkpoint = os.path.join(model_checkpoint_dir, model_checkpoint)
+        
+        os.makedirs(self.output_dir, exist_ok=True)
         
 
     def get_class_weights(self, loader):
@@ -313,7 +318,7 @@ class DeepLearningModel():
         # Modify the final layer for binary classification
         model.fc = torch.nn.Linear(model.fc.in_features, 2)
 
-        self.training_loop(model, train_loader, epochs=100)
+        self.training_loop(model, train_loader, epochs=1000)
 
         self.model = model
         self.test_loader = test_loader
@@ -324,6 +329,134 @@ class DeepLearningModel():
         print(f"✅ Model saved successfully: {self.model_checkpoint}")
 
         return model, train_loader, test_loader
+    
+    def predict_one(
+        self,
+        videoId: str,
+    ):
+        
+        
+        device = self.device
+        
+        # Load the trained model from checkpoint.
+        model_path = self.model_checkpoint
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model checkpoint not found: {model_path}")
+        model = torch.load(model_path, map_location=device, weights_only=False)
+        model.eval()
+        model.to(device)
+        
+        # Load the CSV file that was used during training.
+        csv_path = self.binned_video_csv
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"Binned CSV file not found: {csv_path}")
+        df = pd.read_csv(csv_path)
+        # Filter the CSV for the given videoId.
+        df_video = df[df['videoId'] == videoId]
+        if df_video.empty:
+            raise ValueError(f"No entries found for videoId {videoId} in {csv_path}")
+        
+        # For determining clip parameters, we mimic the training code:
+        # In your training, you use:
+        #   time_splits = df.iloc[1]['time']
+        #   frames_per_clip = int(36 * time_splits)
+        # Here we do the same (using the second row if available).
+        if len(df_video) > 1:
+            time_splits = df_video.iloc[1]['time']
+        else:
+            time_splits = df_video.iloc[0]['time']
+        frames_per_clip = int(36 * time_splits)
+        # Also define the expected number of frames per video (as in your training code)
+        frames_per_video = 36 * 15
+
+        # Load the video file.
+        video_path = os.path.join(self.videos_dir, f"{videoId}.mp4")
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise RuntimeError(f"Failed to open video file: {video_path}")
+        
+        # Get video FPS (frames per second)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        
+        # Define the image transform (same as used during training).
+        transform = transforms.Compose([
+            transforms.Resize((112, 112)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                std=[0.229, 0.224, 0.225])
+        ])
+        
+        # Read and transform all video frames.
+        frames = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            # Convert from BGR (OpenCV) to RGB, then to a PIL Image, then apply transform.
+            image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            tensor_frame = transform(image)
+            frames.append(tensor_frame)
+        cap.release()
+        cv2.destroyAllWindows()
+        
+        # If the video has fewer frames than expected, pad with the last frame.
+        if len(frames) < frames_per_video:
+            frames.extend([frames[-1]] * (frames_per_video - len(frames)))
+        
+        # Helper function to extract clip frames for a given time stamp.
+        def get_clip_frames(frames, time_val, clip_size, fps, time_splits):
+            """
+            Extracts a clip given a time stamp (the end time of the clip) by computing
+            the start frame using the provided time_splits value.
+            """
+            start_time_in_seconds = max(0, time_val - time_splits)
+            start_frame = int(start_time_in_seconds * fps)
+            clip_frames = frames[start_frame : start_frame + clip_size]
+            # In case there are not enough frames at the end, pad with the last frame.
+            if len(clip_frames) < clip_size:
+                clip_frames.extend([clip_frames[-1]] * (clip_size - len(clip_frames)))
+            # Stack the list of tensors along the temporal dimension.
+            return torch.stack(clip_frames, dim=1)  # Shape: [3, clip_size, 112, 112]
+        
+        # List to store prediction results.
+        results = []
+
+        # For each time bin (row) in the filtered CSV, extract the clip and run prediction.
+        for idx, row in df_video.iterrows():
+            time_val = row['time']  # This is used to define the clip
+            # Extract the clip frames (tensor shape will be [3, frames_per_clip, 112,112])
+            clip_tensor = get_clip_frames(frames, time_val, frames_per_clip, fps, time_splits)
+            # Add a batch dimension: shape becomes [1, 3, frames_per_clip, 112,112]
+            clip_tensor = clip_tensor.unsqueeze(0).to(device)
+            
+            # Run the model on this clip.
+            with torch.no_grad():
+                output = model(clip_tensor)
+                # Assuming the model outputs logits for 2 classes,
+                # compute softmax probabilities and pick the predicted class.
+                probs = torch.softmax(output, dim=1)
+                predicted_label = torch.argmax(probs, dim=1).item()
+                probability = probs[0, predicted_label].item()
+            
+            # Append the result (you can include additional fields if needed).
+            results.append({
+                "videoId": videoId,
+                "time": time_val,
+                "predicted_label": predicted_label,
+                "probability": probability
+            })
+        
+        # Convert the results list to a DataFrame and write to CSV.
+        results_df = pd.DataFrame(results)
+        output_csv_path = os.path.join(self.output_dir, f'{videoId}.csv')
+        results_df.to_csv(output_csv_path, index=False)
+        print(f"Prediction results saved to {output_csv_path}")
+        
+        return results_df
+    
+    
             
 def main():
     print()
