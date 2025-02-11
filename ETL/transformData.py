@@ -33,6 +33,7 @@ class GazeDataTransformer:
         self.EDGE_THRESHOLD = 0.10  # 10% from edges
         self.normalized_data = []
         self.bad_gaze_data = []
+        self.merged_df = None
 
         os.makedirs(os.path.dirname(self.output_dir), exist_ok=True)
 
@@ -299,7 +300,7 @@ class GazeDataTransformer:
             - training_df (pd.Dataframe): the cleaned dataframe prepped for training
         '''
 
-        merged_df = pd.DataFrame(self.normalized_data)
+        merged_df = self.merged_df
         # Create bins of time_split seconds for the
         merged_df['time_bin'] = (merged_df['time'] // time_split).astype(int)  
 
@@ -420,6 +421,7 @@ class GazeDataTransformer:
         final_users_df = self.prep_user_df(self.users_df)
         merged_df = self.process_merged_df(final_survey_df, final_users_df)
         
+        self.merged_df = merged_df
 
         # Lenny's code
         if not os.path.exists(os.path.join(self.output_dir, good_output_csv)):
@@ -430,6 +432,7 @@ class GazeDataTransformer:
 
         # save the merged csv for reference
         self.save_merged_csv(df=merged_df)
+
 
         if not os.path.exists(os.path.join(self.output_dir, good_output_csv)):
             self.save_normalized_results(good_output_csv= os.path.join(self.output_dir, good_output_csv),
