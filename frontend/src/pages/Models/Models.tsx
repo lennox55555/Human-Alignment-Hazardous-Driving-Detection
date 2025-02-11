@@ -9,6 +9,10 @@ const ModelTabs = () => {
   const [videoId, setVideoId] = useState('');
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(0);
+  console.log(videoPlaying)
+  console.log(videoId)
+  console.log(startTime)
+  console.log(endTime)
 
   const handleVideoComplete = () => {
     setVideoPlaying(false);
@@ -21,6 +25,7 @@ const ModelTabs = () => {
   const handleFootageMetaData = (spacebarTimestamps: number[], startTime: number, endTime: number) => {
       setStartTime(startTime);
       setEndTime(endTime);
+      console.log(spacebarTimestamps)
   }
 
   const models = [
