@@ -75,6 +75,9 @@ class NaiveHazardDetector:
         
         # Apply prediction to each row
         predictions = normalized_data.apply(self.predict_single_observation, axis=1)
+
+        #TODO: OUTPUT THE PREDICTIONS IN A CSV AND CALL FROM HERE 
+        #TODO: BASICALLY JUST MATCH THE VIDEOID TO GET THE PREDICTION
         return predictions
         
     def evaluate(self, data, predictions):
