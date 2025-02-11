@@ -1,9 +1,27 @@
 import { useState } from 'react';
 import { Card, Tabs, Tab, Button, Container } from 'react-bootstrap';
 import styles from './Models.module.css'
+import ModelVideoPlayer from '../../components/video/ModelVideoPlayer';
 
 const ModelTabs = () => {
   const [activeKey, setActiveKey] = useState(0);
+  const [videoPlaying, setVideoPlaying] = useState<boolean>(true);
+  const [videoId, setVideoId] = useState('');
+  const [startTime, setStartTime] = useState<number>(0);
+  const [endTime, setEndTime] = useState<number>(0);
+
+  const handleVideoComplete = () => {
+    setVideoPlaying(false);
+  }
+
+  const handleVideoId = (videoId: string) => {
+    setVideoId(videoId);
+  }
+
+  const handleFootageMetaData = (spacebarTimestamps: number[], startTime: number, endTime: number) => {
+      setStartTime(startTime);
+      setEndTime(endTime);
+  }
 
   const models = [
     {
@@ -53,6 +71,29 @@ const ModelTabs = () => {
                   <div className={styles.section}>
                     <h4 className={styles.sectionTitle}>Results</h4>
                     <p>{model.results}</p>
+                    <div className="container">
+                      <div className="row">
+                        <div className="col-md-6">
+                          {/* Original Video  */}
+                          <ModelVideoPlayer
+                          onVideoComplete={handleVideoComplete}
+                          passVideoId={handleVideoId}
+                          passFootageMetaData={handleFootageMetaData}
+                          />
+                          <p className="text-center">Original Video</p>
+                        </div>
+                        <div className="col-md-6">
+                          {/* Prediction */}
+                          <ModelVideoPlayer
+                          onVideoComplete={handleVideoComplete}
+                          passVideoId={handleVideoId}
+                          passFootageMetaData={handleFootageMetaData}
+                          />
+                          <p className="text-center">Output Video</p>
+                        </div>
+                      </div>
+                  </div>
+                    
                   </div>
 
                   <div className={styles.section}>
