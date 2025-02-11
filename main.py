@@ -6,12 +6,11 @@ Think of it as a local version of the web app
 from ETL.processData import DataProcessor
 from ETL.extractData import GazeDataExtractor
 from ETL.transformData import GazeDataTransformer
-
 from models.naiveModel import NaiveHazardDetector
 from models.deep_learning_train import DeepLearningModel
-
-
+from models.traditionalCVModel import GazeCVClassifier
 import os
+import joblib
 
 DATA_DIR = './data'
 PROCESSED_VIDEOS_DIR = os.path.join(DATA_DIR, 'processed/driving_videos')
@@ -46,7 +45,26 @@ def main():
 
 # ====================================TRADITIONAL CV APPROACH==============================
 
+    print('\nRunning Traditional CV Approach...')
+    csv_path_traditional = os.path.join(DATA_DIR, "processed", "normalized_gaze_data.csv")
+    video_folder_traditional = os.path.join(DATA_DIR, "raw", "driving_videos")
+    trad_classifier = GazeCVClassifier(
+        csv_path=csv_path_traditional,
+        video_folder=video_folder_traditional,
+        patch_size=600,
+        hist_bins=8,
+        rolling_window=7,
+        cap_time=15,
+        model_type="svm"
+    )
+    X_traditional, y_traditional = trad_classifier.process_data()
+    model_traditional, scaler_traditional = trad_classifier.train_classifier(X_traditional, y_traditional)
 
+    checkpoint_dir = os.path.join("models", "checkpoints")
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    checkpoint_path = os.path.join(checkpoint_dir, "traditionalCVModel.pkl")
+    joblib.dump(model_traditional, checkpoint_path)
+    print(f"Traditional CV model saved to {checkpoint_path}")
 
 
 # ====================================DEEP LEARNING CV APPROACH==============================
