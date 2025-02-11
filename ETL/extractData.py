@@ -220,10 +220,11 @@ class GazeDataExtractor():
         
         # Download videos from AWS
         video_downloader = S3VideoDownloader(self.data_dir)
-        if not os.path.exists(video_downloader.video_dir):
+        if not os.path.exists(video_downloader.video_dir) or len(os.listdir(video_downloader.video_dir)) == 0:
             video_downloader.pull_data()
         else:
             print('VIDEOS from AWS have already been downloaded!!')
+
         
 def main():
     gazeDataExtractor = GazeDataExtractor()

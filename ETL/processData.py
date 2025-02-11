@@ -152,7 +152,8 @@ class DataProcessor():
         self.save_csv(df)
         print(f"\nPROCESSED DATA successfully saved to {self.aggregate_data_by_video}")
 
-        if not os.path.exists(os.path.join(self.processed_data_dir, 'driving_videos')):
+        processed_vid_dir = os.path.join(self.processed_data_dir, 'driving_videos')
+        if not os.path.exists(processed_vid_dir) or len(os.listdir(processed_vid_dir)) == 0:
             print(f"\nProcessing driving videos for training...")
             creator = UserGazeVideoCreator(data_dir=self.data_dir)
             creator.add_gaze_per_video()
