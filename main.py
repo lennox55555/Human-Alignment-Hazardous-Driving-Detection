@@ -15,7 +15,7 @@ import joblib
 DATA_DIR = './data'
 PROCESSED_VIDEOS_DIR = os.path.join(DATA_DIR, 'processed/driving_videos')
 MODEL_CHECKPOINT_DIR = "./models/checkpoints"
-DEEP_LEARNING_CHECKPOINT = "deepLearningModel.pkl"
+DEEP_LEARNING_CHECKPOINT = "deepLearningModel.pth"
 
 def main():
     # TODO: Uncomment this line of code to download the data
@@ -70,12 +70,15 @@ def main():
 # ====================================DEEP LEARNING CV APPROACH==============================
     if not os.path.exists(os.path.join(MODEL_CHECKPOINT_DIR, DEEP_LEARNING_CHECKPOINT)):
         print('\nStarting Deep Learning Model Training...')
-        os.makedirs(os.path.join(MODEL_CHECKPOINT_DIR, DEEP_LEARNING_CHECKPOINT), exist_ok=True)
+        os.makedirs(MODEL_CHECKPOINT_DIR, exist_ok=True)
         deepLearningModel = DeepLearningModel(data_dir=DATA_DIR, model_checkpoint_dir=MODEL_CHECKPOINT_DIR)
         deepLearningModel.run_training()
         accuracy, recall = deepLearningModel.evaluate()
         print(f"\nTest Accuracy: {accuracy * 100:.2f}%")
-        print(f"\nTest Recall: {recall * 100:.2f}%")  
+        print(f"\nTest Recall: {recall * 100:.2f}%") 
+    else:
+        deepLearningModel = DeepLearningModel(data_dir=DATA_DIR, model_checkpoint_dir=MODEL_CHECKPOINT_DIR)
+        deepLearningModel.predict_one('video238')
 
         
 
