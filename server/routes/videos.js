@@ -54,12 +54,12 @@ router.get('/random', async (req, res) => {
     });
   }
 });
-router.get('/268', async (req, res) => {
+router.get('/238', async (req, res) => {
   try {
     const video = await getVideoById();
     res.json(video);
   } catch (error) {
-    console.error('Error in /268 route:', {
+    console.error('Error in /238 route:', {
       message: error.message,
       stack: error.stack,
       code: error.code

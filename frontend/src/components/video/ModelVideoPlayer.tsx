@@ -3,6 +3,60 @@ import { VideoData, VideoPlayerProps } from '../../utils/interfaces';
 import { Spinner } from 'react-bootstrap';
 import { useWebGazer } from '../../hooks/useWebGazer';
 
+// Define an interface for your data structure
+interface PredictionData {
+    videoId: string;
+    time: number;
+    x: number;
+    y: number;
+    hazard: string;
+    predicted: boolean; // Updated to boolean
+}
+
+// Function to load and parse the CSV
+async function loadCSVData(filePath: string): Promise<PredictionData[]> {
+    try {
+        const response = await fetch(filePath);
+        const csvText = await response.text();
+
+        // Split the CSV into rows and parse
+        const rows = csvText.split('\n');
+        const headers = rows[0].split(',').map(header => header.trim());
+
+        return rows.slice(1) // Skip header row
+            .filter(row => row.trim() !== '') // Skip empty rows
+            .map(row => {
+                const values = row.split(',').map(value => value.trim());
+                const rowData: any = {};
+
+                headers.forEach((header, index) => {
+                    if (header === "videoId" || header === "hazard") {
+                        rowData[header] = values[index];
+                    } else if (header === "predicted") {
+                        rowData[header] = values[index].toLowerCase() === "true"; // Convert to boolean
+                    } else if (header === "time") {
+                        rowData[header] = parseFloat(values[index]) || 0; // Convert time to number
+                    } else {
+                        rowData[header] = parseFloat(values[index]); // Convert numbers
+                    }
+                });
+
+                return rowData as PredictionData;
+            });
+    } catch (error) {
+        console.error('Error loading CSV:', error);
+        throw error;
+    }
+}
+
+// Function to extract 'time' values when predicted is true for a given videoId
+async function getTimeValues(filePath: string, targetVideoId: string): Promise<number[]> {
+    const data = await loadCSVData(filePath);
+    return data
+        .filter(row => row.videoId === targetVideoId && row.predicted) // Filter by videoId and predicted == true
+        .map(row => row.time);
+}
+
 const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVideoId, passFootageMetaData}) => {
     const { startWebGazer, stopWebGazer, isInitialized } = useWebGazer();
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -12,7 +66,8 @@ const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVid
     const [spacebarTimestamps, setSpacebarTimestamps] = useState<number[]>([]);
     const [timestampsLength, setTimestampsLength] = useState<number>(0);
     const [startTime, setStartTime] = useState<number>(0);
-
+    const [predictions, setPredictions] = useState<number[]>([]);
+    const [predictionsIndex, setPredictionsIndex] = useState<number>(0);
 
     const handleVideoFinished = useCallback(() => {
         if (isInitialized) {
@@ -34,16 +89,22 @@ const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVid
     const handleTimeUpdate = () => {
         if (videoRef.current) {
             const timeLeft = videoRef.current.duration - videoRef.current.currentTime;
+            if (videoRef.current.currentTime == predictions[predictionsIndex]) {
+                setFlashActive(true)
+                setPredictionsIndex(predictionsIndex + 1)
+            } else {
+                setFlashActive(false)
+            }
             if (timeLeft <= 0.05 && isInitialized) {
                 stopWebGazer();
             };
         };
     };
 
-    const fetchRandomVideo = async (): Promise<void> => {
+    const fetchVideo = async (): Promise<void> => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:3001/api/videos/268');
+            const response = await fetch('http://localhost:3001/api/videos/238');
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -85,6 +146,7 @@ const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVid
         }
     };
 
+    
     const handleKeyPress = (event: KeyboardEvent) => {
         setTimestampsLength(timestampsLength + 1);
         const currentTime = Date.now();
@@ -109,7 +171,7 @@ const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVid
     }, [handleKeyPress]);
 
     useEffect(() => {
-        fetchRandomVideo();
+        fetchVideo();
 
         return () => {
             if (isInitialized) {
@@ -117,6 +179,19 @@ const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVid
             }
         };
     }, []);
+
+    useEffect(() => {
+        const loadData = async () => {
+          try {
+            const values = await getTimeValues('../../assets/deepLearningPredictions.csv', 'video238');
+            setPredictions(values);
+          } catch (error) {
+            console.error('Error loading predictions:', error);
+          }
+        };
+    
+        loadData();
+      }, []);
 
     if (loading) {
         return (
@@ -156,8 +231,8 @@ const ModelVideoPlayer: React.FC<VideoPlayerProps> = ({ onVideoComplete, passVid
                                 left: 0,
                                 right: 0,
                                 bottom: 0,
-                                border: '20px solid rgba(255, 0, 0, 0.9)',
-                                boxShadow: '0 0 0 1000px rgba(255, 0, 0, 0.6)',
+                                border: '20px solid rgba(25, 0, 255, 0.9)',
+                                boxShadow: '0 0 0 1000px rgba(43, 0, 255, 0.6)',
                                 pointerEvents: 'none',
                                 animation: 'urgentHazardPulse 0.8s ease-in-out infinite',
                                 zIndex: 9999
