@@ -7,7 +7,14 @@ const Model: React.FC<ModelProps> = ({ title, description, results, limitations}
             <div className={styles.wrapper}>
             <h1 className={styles.title}>{title}</h1>
             <p className={styles.description}>{description}</p>
-            <div>Video Placeholder</div>
+            <div className={styles.section}>
+                    <h4 className={styles.sectionTitle}>Results</h4>
+                    <p>{results}</p>
+                    <div className="container">
+                      
+                  </div>
+                    
+                  </div>
             <div className={styles.limitations}>
                 <p>Limitations</p>
                 <ul>
