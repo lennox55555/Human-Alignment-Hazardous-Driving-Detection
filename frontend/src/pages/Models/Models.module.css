@@ -1,0 +1,53 @@
+.container {
+    min-height: 100vh;
+    padding: 2rem;
+    background-color: #f8f9fa;
+  }
+  
+  .card {
+    max-width: 800px;
+    margin: 0 auto;
+    box-shadow: 5px 5px 10px 10px rgba(0, 1, 0, 0.1);
+    border-radius: 12px;
+    border: none;
+  }
+  
+  .tabsContainer {
+    background-color: #f8f9fa;
+    border-radius: 25px;
+    padding: 1rem 1rem 0 1rem;
+  }
+  
+  .content {
+    padding: 2rem;
+  }
+  
+  .title {
+    margin-bottom: 1rem;
+  }
+  
+  .description {
+    color: #6c757d;
+  }
+  
+  .section {
+    margin-top: 2rem;
+  }
+  
+  .sectionTitle {
+    margin-bottom: 1rem;
+  }
+  
+  .limitationsList {
+    padding-left: 1.5rem;
+  }
+  
+  .limitationItem {
+    margin-bottom: 0.5rem;
+  }
+  
+  .buttonContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10rem;
+  }

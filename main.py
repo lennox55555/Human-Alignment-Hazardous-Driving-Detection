@@ -52,6 +52,7 @@ def main():
 # ====================================DEEP LEARNING CV APPROACH==============================
     if not os.path.exists(os.path.join(MODEL_CHECKPOINT_DIR, DEEP_LEARNING_CHECKPOINT)):
         print('\nStarting Deep Learning Model Training...')
+        os.makedirs(os.path.join(MODEL_CHECKPOINT_DIR, DEEP_LEARNING_CHECKPOINT), exist_ok=True)
         deepLearningModel = DeepLearningModel(data_dir=DATA_DIR, model_checkpoint_dir=MODEL_CHECKPOINT_DIR)
         deepLearningModel.run_training()
         accuracy, recall = deepLearningModel.evaluate()
