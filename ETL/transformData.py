@@ -403,53 +403,53 @@ class GazeDataTransformer:
 
     def transform_data(self, time_split=0.28):
         '''
-        Runs the entire pre-process pipeline and returns the final script to be used for training
+        Runs the entire pre-process pipeline and returns the final script to be used for training.
 
         Input:
-            - survey_df (pd.Dataframe): the raw survey_df dataframe
-            - users_df (pd.Dataframe): the raw users_df dataframe
-            - time_split (float): the time (in seconds) for which to bin the dataframe
+            - time_split (float): the time (in seconds) for which to bin the dataframe.
         
         Returns:
-            (pd.Dataframe): the cleaned dataframe prepped for training
+            (pd.DataFrame): the cleaned dataframe prepped for training.
         '''
         good_output_csv = "normalized_gaze_data.csv"
         bad_output_csv = "badgazedata.csv"
 
-        # Tal's code
+        # Prepare survey and user dataframes.
         final_survey_df = self.prep_survey_df(self.survey_df)
         final_users_df = self.prep_user_df(self.users_df)
         merged_df = self.process_merged_df(final_survey_df, final_users_df)
         
-        self.merged_df = merged_df
 
-        # Lenny's code
+        # Add a 'duration' column: for each video, the duration is the maximum time value.
+        merged_df['duration'] = merged_df.groupby('videoId')['time'].transform('max')
+        print("Added duration column to merged data.")
+        self.merged_df = merged_df
         if not os.path.exists(os.path.join(self.output_dir, good_output_csv)):
             self.normalize_gaze_data(merged_df=merged_df)
         else:
-            print('\n NORMALIZED EYE GAZE Data found!!')
-            print('\n Skipping this step...')
+            print('\nNORMALIZED EYE GAZE Data found!!')
+            print('\nSkipping this step...')
 
-        # save the merged csv for reference
+        # Save the merged CSV for reference.
         self.save_merged_csv(df=merged_df)
 
-
         if not os.path.exists(os.path.join(self.output_dir, good_output_csv)):
-            self.save_normalized_results(good_output_csv= os.path.join(self.output_dir, good_output_csv),
-                                      bad_output_csv= os.path.join(self.output_dir, bad_output_csv))
-        
+            self.save_normalized_results(
+                good_output_csv=os.path.join(self.output_dir, good_output_csv),
+                bad_output_csv=os.path.join(self.output_dir, bad_output_csv)
+            )
 
-        # percent of hazards in videos
+        # Print percentage of hazards in the merged data.
         hazard_perc = merged_df[merged_df['hazard'] == True].shape[0] / merged_df.shape[0]
         print(f'Percentage of hazards in data: {hazard_perc}')
-        
+
+        # Create the binned CSV for training if not already done.
         if not os.path.exists(os.path.join(self.output_dir, 'binned_video_dat_wo_user.csv')):
-            # create the binned csv to use for training
             training_df = self.prep_merged_df_for_training(time_split)
             self.save_training_csv(training_df)
         else:
-            print('\n BINNED TRAINING Data found!!')
-            print('\n Skipping this step...')
+            print('\nBINNED TRAINING Data found!!')
+            print('\nSkipping this step...')
 
 
 
